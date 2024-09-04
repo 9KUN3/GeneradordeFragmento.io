@@ -4,10 +4,121 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Fragmento de URL</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Consolas, monospace;
+            margin: 0;
+            padding: 20px;
+            background-color: #2e2e2e;
+            color: #ccc;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background: #333;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #f1c40f;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #f1c40f;
+        }
+        input[type="text"], select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #444;
+            color: #fff;
+        }
+        button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #resultado {
+            margin-top: 20px;
+            padding: 10px;
+            background: #222;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .error {
+            color: #e74c3c;
+        }
+        #historial {
+            margin-top: 20px;
+            background: #444;
+            padding: 10px;
+            border-radius: 4px;
+            color: #ccc;
+        }
+        .hidden {
+            display: none;
+        }
+        .login-container {
+            max-width: 300px;
+            margin: 100px auto;
+            background: #333;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #444;
+            color: #fff;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .login-container button:hover {
+            background-color: #2980b9;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
+    <div class="login-container" id="login-container">
+        <h1>Acceso Seguro</h1>
+        <input type="password" id="password" placeholder="Ingrese la clave">
+        <button onclick="verificarClave()">Ingresar</button>
+        <div id="login-error" class="error"></div>
+    </div>
+
+    <div class="container hidden" id="main-container">
         <h1>Generador de Fragmento de URL</h1>
         <form id="formulario">
             <label for="nombre">Nombre de la Serie:</label>
@@ -26,6 +137,90 @@
         <div id="resultado"></div>
         <div id="historial"></div>
     </div>
-    <script src="script.js"></script>
+
+    <script>
+        let historial = JSON.parse(localStorage.getItem('historialFragmentos')) || [];
+        const claveCorrecta = 'claveSegura123';  // Clave segura
+
+        // Función para verificar la clave de acceso
+        function verificarClave() {
+            const claveIngresada = document.getElementById('password').value;
+
+            if (claveIngresada === claveCorrecta) {
+                localStorage.setItem('sesionActiva', 'true');
+                mostrarMainContainer();
+            } else {
+                document.getElementById('login-error').innerText = 'Clave incorrecta. Intente de nuevo.';
+            }
+        }
+
+        // Función para mostrar el contenedor principal
+        function mostrarMainContainer() {
+            document.getElementById('login-container').classList.add('hidden');
+            document.getElementById('main-container').classList.remove('hidden');
+            actualizarHistorial();
+        }
+
+        // Comprobar si la sesión ya está activa
+        if (localStorage.getItem('sesionActiva') === 'true') {
+            mostrarMainContainer();
+        }
+
+        // Validación en tiempo real
+        document.getElementById('nombre').addEventListener('input', function () {
+            var nombre = this.value.trim();
+            var resultado = document.getElementById('resultado');
+
+            if (nombre.length > 50) {
+                resultado.innerHTML = '<span class="error">El nombre no puede exceder los 50 caracteres.</span>';
+            } else {
+                resultado.innerHTML = '';
+            }
+        });
+
+        // Función para generar el fragmento
+        function generarFragmento() {
+            var nombre = document.getElementById('nombre').value.trim();
+            var idioma = document.getElementById('idioma').value;
+            var resultado = document.getElementById('resultado');
+
+            if (nombre === '') {
+                resultado.innerHTML = '<span class="error">Por favor, ingresa el nombre de la serie.</span>';
+                return;
+            }
+            if (nombre.length > 50) {
+                resultado.innerHTML = '<span class="error">El nombre de la serie no puede exceder los 50 caracteres.</span>';
+                return;
+            }
+
+            var nombreFormateado = nombre.replace(/\s+/g, '-');
+            var fragmento = '#' + nombreFormateado + '-' + idioma;
+
+            // Guardar en el historial
+            historial.push(fragmento);
+            guardarHistorial();
+            actualizarHistorial();
+
+            resultado.innerText = 'Fragmento generado: ' + fragmento;
+        }
+
+        // Función para guardar el historial en el almacenamiento local
+        function guardarHistorial() {
+            localStorage.setItem('historialFragmentos', JSON.stringify(historial));
+        }
+
+        // Función para actualizar y mostrar el historial
+        function actualizarHistorial() {
+            var historialDiv = document.getElementById('historial');
+            historialDiv.innerHTML = '<strong>Historial:</strong><br>' + historial.join('<br>');
+        }
+
+        // Mostrar el historial almacenado al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            if (historial.length > 0) {
+                actualizarHistorial();
+            }
+        });
+    </script>
 </body>
 </html>
