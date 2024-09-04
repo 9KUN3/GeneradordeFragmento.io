@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Fragmento de URL</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Generador de Fragmento de URL</h1>
+        <form id="formulario">
+            <label for="nombre">Nombre de la Serie:</label>
+            <input type="text" id="nombre" placeholder="Ingresa el nombre de la serie" maxlength="50" required>
+
+            <label for="idioma">Idioma:</label>
+            <select id="idioma" required>
+                <option value="Lat">Latino</option>
+                <option value="Es">Español</option>
+                <option value="Sub">Subtitulado</option>
+            </select>
+
+            <button type="button" onclick="generarFragmento()">Generar Fragmento</button>
+        </form>
+
+        <div id="resultado"></div>
+        <div id="historial"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
