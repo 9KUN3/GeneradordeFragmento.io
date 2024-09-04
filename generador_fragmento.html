@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Fragmento de URL</title>
+    <style>
+        body {
+            font-family: Consolas, monospace;
+            margin: 0;
+            padding: 20px;
+            background-color: #2e2e2e;
+            color: #ccc;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background: #333;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #f1c40f;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #f1c40f;
+        }
+        input[type="text"], select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #444;
+            color: #fff;
+        }
+        button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #resultado {
+            margin-top: 20px;
+            padding: 10px;
+            background: #222;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .error {
+            color: #e74c3c;
+        }
+        #historial {
+            margin-top: 20px;
+            background: #444;
+            padding: 10px;
+            border-radius: 4px;
+            color: #ccc;
+        }
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1e1e1e;
+                color: #ccc;
+            }
+            .container {
+                background-color: #2e2e2e;
+            }
+        }
+        @media (prefers-color-scheme: light) {
+            body {
+                background-color: #f4f4f9;
+                color: #333;
+            }
+            .container {
+                background-color: #fff;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Generador de Fragmento de URL</h1>
+        <form id="formulario">
+            <label for="nombre">Nombre de la Serie:</label>
+            <input type="text" id="nombre" placeholder="Ingresa el nombre de la serie" maxlength="50" required>
+
+            <label for="idioma">Idioma:</label>
+            <select id="idioma" required>
+                <option value="Lat">Latino</option>
+                <option value="Es">Español</option>
+                <option value="Sub">Subtitulado</option>
+            </select>
+
+            <button type="button" onclick="generarFragmento()">Generar Fragmento</button>
+        </form>
+
+        <div id="resultado"></div>
+        <div id="historial"></div>
+    </div>
+
+    <script>
+        let historial = [];
+
+        // Validación en tiempo real
+        document.getElementById('nombre').addEventListener('input', function () {
+            var nombre = this.value.trim();
+            var resultado = document.getElementById('resultado');
+
+            if (nombre.length > 50) {
+                resultado.innerHTML = '<span class="error">El nombre no puede exceder los 50 caracteres.</span>';
+            } else {
+                resultado.innerHTML = '';
+            }
+        });
+
+        // Función para generar el fragmento
+        function generarFragmento() {
+            var nombre = document.getElementById('nombre').value.trim();
+            var idioma = document.getElementById('idioma').value;
+            var resultado = document.getElementById('resultado');
+
+            if (nombre === '') {
+                resultado.innerHTML = '<span class="error">Por favor, ingresa el nombre de la serie.</span>';
+                return;
+            }
+            if (nombre.length > 50) {
+                resultado.innerHTML = '<span class="error">El nombre de la serie no puede exceder los 50 caracteres.</span>';
+                return;
+            }
+
+            // Reemplazar espacios con guiones medios
+            var nombreFormateado = nombre.replace(/\s+/g, '-');
+            var fragmento = '#' + nombreFormateado + '-' + idioma;
+
+            // Guardar en el historial
+            historial.push(fragmento);
+            guardarSerie(nombreFormateado);
+            actualizarHistorial();
+
+            resultado.innerText = 'Fragmento generado: ' + fragmento;
+        }
+
+        // Actualizar y mostrar el historial
+        function actualizarHistorial() {
+            var historialDiv = document.getElementById('historial');
+            historialDiv.innerHTML = '<strong>Historial:</strong><br>' + historial.join('<br>');
+        }
+
+        // Guardar el nombre de la serie en el almacenamiento local
+        function guardarSerie(nombre) {
+            let seriesGuardadas = JSON.parse(localStorage.getItem('seriesGuardadas')) || [];
+            if (!seriesGuardadas.includes(nombre)) {
+                seriesGuardadas.push(nombre);
+                localStorage.setItem('seriesGuardadas', JSON.stringify(seriesGuardadas));
+            }
+        }
+    </script>
+</body>
+</html>
