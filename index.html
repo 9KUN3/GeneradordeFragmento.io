@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Fragmento de URL</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
             font-family: Consolas, monospace;
@@ -31,14 +32,24 @@
             font-size: 14px;
             color: #f1c40f;
         }
-        input[type="text"], select {
-            width: calc(100% - 22px);
-            padding: 10px;
+        .input-group {
+            position: relative;
             margin-bottom: 10px;
+        }
+        .input-group input[type="text"], .input-group select {
+            width: calc(100% - 30px);
+            padding: 10px;
             border: 1px solid #555;
             border-radius: 4px;
             background: #444;
             color: #fff;
+        }
+        .input-group .icon {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            color: #f1c40f;
         }
         button {
             background-color: #3498db;
@@ -63,6 +74,21 @@
             border: 1px solid #555;
             border-radius: 4px;
             font-size: 14px;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: #3498db;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .copy-btn:active {
+            transform: scale(0.9);
         }
         .error {
             color: #e74c3c;
@@ -73,6 +99,17 @@
             padding: 10px;
             border-radius: 4px;
             color: #ccc;
+            position: relative;
+        }
+        .clear-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 18px;
         }
         .hidden {
             display: none;
@@ -108,6 +145,10 @@
         .login-container button:hover {
             background-color: #2980b9;
         }
+        .login-container .loader {
+            width: 50px;
+            margin: 10px auto;
+        }
     </style>
 </head>
 <body>
@@ -115,27 +156,38 @@
         <h1>Acceso Seguro</h1>
         <input type="password" id="password" placeholder="Ingrese la clave">
         <button onclick="verificarClave()">Ingresar</button>
+        <img src="https://i.gifer.com/ZZ5H.gif" alt="Cargando..." class="loader hidden" id="loader">
         <div id="login-error" class="error"></div>
     </div>
 
     <div class="container hidden" id="main-container">
         <h1>Generador de Fragmento de URL</h1>
         <form id="formulario">
-            <label for="nombre">Nombre de la Serie:</label>
-            <input type="text" id="nombre" placeholder="Ingresa el nombre de la serie" maxlength="50" required>
+            <div class="input-group">
+                <label for="nombre">Nombre de la Serie:</label>
+                <input type="text" id="nombre" placeholder="Ingresa el nombre de la serie" maxlength="50" required>
+                <i class="fas fa-film icon"></i>
+            </div>
 
-            <label for="idioma">Idioma:</label>
-            <select id="idioma" required>
-                <option value="Lat">Latino</option>
-                <option value="Es">Español</option>
-                <option value="Sub">Subtitulado</option>
-            </select>
+            <div class="input-group">
+                <label for="idioma">Idioma:</label>
+                <select id="idioma" required>
+                    <option value="Lat">Latino</option>
+                    <option value="Es">Español</option>
+                    <option value="Sub">Subtitulado</option>
+                </select>
+                <i class="fas fa-globe icon"></i>
+            </div>
 
             <button type="button" onclick="generarFragmento()">Generar Fragmento</button>
         </form>
 
         <div id="resultado"></div>
-        <div id="historial"></div>
+        <div id="historial">
+            <button class="clear-btn" onclick="eliminarHistorial()">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
     </div>
 
     <script>
@@ -145,10 +197,15 @@
         // Función para verificar la clave de acceso
         function verificarClave() {
             const claveIngresada = document.getElementById('password').value;
+            const loader = document.getElementById('loader');
 
             if (claveIngresada === claveCorrecta) {
-                localStorage.setItem('sesionActiva', 'true');
-                mostrarMainContainer();
+                loader.classList.remove('hidden');
+                setTimeout(() => {
+                    loader.classList.add('hidden');
+                    localStorage.setItem('sesionActiva', 'true');
+                    mostrarMainContainer();
+                }, 2000);
             } else {
                 document.getElementById('login-error').innerText = 'Clave incorrecta. Intente de nuevo.';
             }
@@ -196,31 +253,38 @@
             var nombreFormateado = nombre.replace(/\s+/g, '-');
             var fragmento = '#' + nombreFormateado + '-' + idioma;
 
+            // Mostrar el resultado
+            resultado.innerHTML = fragmento + '<button class="copy-btn" onclick="copiarAlPortapapeles(\'' + fragmento + '\')"><i class="fas fa-copy"></i></button>';
+
             // Guardar en el historial
             historial.push(fragmento);
-            guardarHistorial();
-            actualizarHistorial();
-
-            resultado.innerText = 'Fragmento generado: ' + fragmento;
-        }
-
-        // Función para guardar el historial en el almacenamiento local
-        function guardarHistorial() {
             localStorage.setItem('historialFragmentos', JSON.stringify(historial));
+
+            actualizarHistorial();
         }
 
-        // Función para actualizar y mostrar el historial
+        // Función para copiar al portapapeles
+        function copiarAlPortapapeles(texto) {
+            navigator.clipboard.writeText(texto).then(function () {
+                alert('Fragmento copiado: ' + texto);
+            }, function (err) {
+                alert('Error al copiar: ', err);
+            });
+        }
+
+        // Función para actualizar el historial
         function actualizarHistorial() {
             var historialDiv = document.getElementById('historial');
-            historialDiv.innerHTML = '<strong>Historial:</strong><br>' + historial.join('<br>');
+            historialDiv.innerHTML = historial.map(item => `<div>${item}</div>`).join('');
+            historialDiv.innerHTML += `<button class="clear-btn" onclick="eliminarHistorial()"><i class="fas fa-trash-alt"></i></button>`;
         }
 
-        // Mostrar el historial almacenado al cargar la página
-        document.addEventListener('DOMContentLoaded', function() {
-            if (historial.length > 0) {
-                actualizarHistorial();
-            }
-        });
+        // Función para eliminar el historial
+        function eliminarHistorial() {
+            historial = [];
+            localStorage.removeItem('historialFragmentos');
+            actualizarHistorial();
+        }
     </script>
 </body>
 </html>
