@@ -149,6 +149,20 @@
             width: 50px;
             margin: 10px auto;
         }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #2ecc71;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            opacity: 0;
+            transition: opacity 0.5s ease-out;
+        }
+        .toast.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -179,24 +193,33 @@
                 <i class="fas fa-globe icon"></i>
             </div>
 
+            <div class="input-group">
+                <label for="temporada">Temporada (opcional):</label>
+                <select id="temporada">
+                    <option value="">Ninguna</option>
+                    <option value="T1">T1</option>
+                    <option value="T2">T2</option>
+                    <option value="T3">T3</option>
+                </select>
+                <i class="fas fa-layer-group icon"></i>
+            </div>
+
             <button type="button" onclick="generarFragmento()">Generar Fragmento</button>
         </form>
 
         <div id="resultado"></div>
-        <div id="historial">
-            <button class="clear-btn" onclick="eliminarHistorial()">
-                <i class="fas fa-trash-alt"></i>
-            </button>
-        </div>
+        <div id="historial"></div>
     </div>
+
+    <div id="toast" class="toast">Fragmento copiado</div>
 
     <script>
         let historial = JSON.parse(localStorage.getItem('historialFragmentos')) || [];
-        const claveCorrecta = 'claveSegura123';  // Clave segura
+        const claveCorrecta = btoa('claveSegura123');  // Clave ofuscada
 
         // Función para verificar la clave de acceso
         function verificarClave() {
-            const claveIngresada = document.getElementById('password').value;
+            const claveIngresada = btoa(document.getElementById('password').value);
             const loader = document.getElementById('loader');
 
             if (claveIngresada === claveCorrecta) {
@@ -215,46 +238,44 @@
         function mostrarMainContainer() {
             document.getElementById('login-container').classList.add('hidden');
             document.getElementById('main-container').classList.remove('hidden');
-            actualizarHistorial();
         }
 
-        // Comprobar si la sesión ya está activa
+        // Mantener la sesión activa
         if (localStorage.getItem('sesionActiva') === 'true') {
             mostrarMainContainer();
         }
 
-        // Validación en tiempo real
-        document.getElementById('nombre').addEventListener('input', function () {
-            var nombre = this.value.trim();
-            var resultado = document.getElementById('resultado');
+        // Función para validar nombre de la serie
+        function validarNombreSerie(nombre) {
+            const regex = /^[a-zA-Z0-9\s-]+$/;
+            return regex.test(nombre);
+        }
 
-            if (nombre.length > 50) {
-                resultado.innerHTML = '<span class="error">El nombre no puede exceder los 50 caracteres.</span>';
-            } else {
-                resultado.innerHTML = '';
-            }
-        });
-
-        // Función para generar el fragmento
+        // Función para generar fragmento
         function generarFragmento() {
-            var nombre = document.getElementById('nombre').value.trim();
-            var idioma = document.getElementById('idioma').value;
-            var resultado = document.getElementById('resultado');
+            const nombre = document.getElementById('nombre').value.trim();
+            const idioma = document.getElementById('idioma').value;
+            const temporada = document.getElementById('temporada').value;
 
-            if (nombre === '') {
-                resultado.innerHTML = '<span class="error">Por favor, ingresa el nombre de la serie.</span>';
-                return;
-            }
-            if (nombre.length > 50) {
-                resultado.innerHTML = '<span class="error">El nombre de la serie no puede exceder los 50 caracteres.</span>';
+            if (!validarNombreSerie(nombre)) {
+                alert('El nombre de la serie contiene caracteres no válidos.');
                 return;
             }
 
-            var nombreFormateado = nombre.replace(/\s+/g, '-');
-            var fragmento = '#' + nombreFormateado + '-' + idioma;
+            let fragmento = '#';
+            if (temporada) fragmento += temporada + '-';
+            fragmento += nombre.split(' ').join('-') + '-' + idioma;
 
-            // Mostrar el resultado
-            resultado.innerHTML = fragmento + '<button class="copy-btn" onclick="copiarAlPortapapeles(\'' + fragmento + '\')"><i class="fas fa-copy"></i></button>';
+            // Verificar si el fragmento ya existe
+            if (historial.includes(fragmento)) {
+                alert('Este fragmento ya fue generado.');
+                return;
+            }
+
+            // Mostrar el fragmento
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = fragmento + 
+                '<button class="copy-btn" onclick="copiarAlPortapapeles(\'' + fragmento + '\')"><i class="fas fa-copy"></i></button>';
 
             // Guardar en el historial
             historial.push(fragmento);
@@ -266,16 +287,18 @@
         // Función para copiar al portapapeles
         function copiarAlPortapapeles(texto) {
             navigator.clipboard.writeText(texto).then(function () {
-                alert('Fragmento copiado: ' + texto);
-            }, function (err) {
-                alert('Error al copiar: ', err);
+                mostrarToast('Fragmento copiado');
             });
         }
 
         // Función para actualizar el historial
         function actualizarHistorial() {
-            var historialDiv = document.getElementById('historial');
-            historialDiv.innerHTML = historial.map(item => `<div>${item}</div>`).join('');
+            const historialDiv = document.getElementById('historial');
+            historialDiv.innerHTML = historial.map(item => `
+                <div>${item} 
+                    <button class="copy-btn" onclick="copiarAlPortapapeles('${item}')"><i class="fas fa-copy"></i></button>
+                </div>
+            `).join('');
             historialDiv.innerHTML += `<button class="clear-btn" onclick="eliminarHistorial()"><i class="fas fa-trash-alt"></i></button>`;
         }
 
@@ -285,6 +308,17 @@
             localStorage.removeItem('historialFragmentos');
             actualizarHistorial();
         }
+
+        // Mostrar mensaje flotante (toast)
+        function mostrarToast(mensaje) {
+            const toast = document.getElementById('toast');
+            toast.innerText = mensaje;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // Cargar historial al inicio
+        actualizarHistorial();
     </script>
 </body>
 </html>
